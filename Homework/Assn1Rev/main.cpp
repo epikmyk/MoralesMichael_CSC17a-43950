@@ -20,11 +20,13 @@ bool leapYr(int year);
 void problem3();
 void problem4();
 //frnToCel goes with problem 5
-float frnToCel(float frnheit);
+float frnToCel(float);
 void problem5();
 void problem6();
-//bubbleSrt goes with problem 7
-void bubbleSrt();
+//prntArry, sort, and binarySearch go with problem 7
+void prntArray(string [], int, int);
+void sort(string [], int);
+int binarySearch(string [], int, string);
 void problem7();
 
 int main(int argc, char** argv) 
@@ -371,14 +373,99 @@ void problem6()
 
 void problem7()
 {
+    string inputName;
     const int NUM_NAMES = 20;
-    
     string names[NUM_NAMES] = {"Collins, Bill", "Smith, Bart", "Allen, Jim",
-                               "Griffin, Jim", "Stamey, Marty", "Rose, Geri",
+                               "Griffin, Jim", "Stamey, Marty", "Rose, Geri", 
                                "Taylor, Terri", "Johnson, Jill",
-                               "Allison, Jeff", "Looney, Joe", "Wolfe, Bill",
-                               "James, Jean", "Weaver, Jim", "Pore, Bob",
-                               "Rutherford, Greg", "Javens, Renee",
+                               "Allison, Jeff", "Looney, Joe", "Wolfe, Bill", 
+                               "James, Jean", "Weaver, Jim", "Pore, Bob", 
+                               "Rutherford, Greg", "Javens, Renee", 
                                "Harrison, Rose", "Setzer, Cathy",
                                "Pike, Gordon", "Holland, Beth" };
+    
+    //sort array
+    sort(names, NUM_NAMES);
+    //print array
+    prntArray(names, NUM_NAMES, 5);
+    //prompt user to enter a name from printed array
+    cout << "Type in a name: ";
+    cin.ignore();
+    getline(cin, inputName);
+    //Output location of name
+    cout << "Name location : " << binarySearch(names, NUM_NAMES, inputName)
+            << endl << endl;
+    
+}
+
+//print array
+void prntArray(string a[], int size, int perLine)
+{
+    for (int i = 0; i < size; i++)
+    {
+        cout << a[i] << " | ";
+ 
+        if(i%perLine == (perLine -1))
+        {
+            cout << endl;
+        }
+    }
+    cout << endl;
+}
+
+void sort(string names[], int size)
+{
+    //Sort array using bubble sort
+    for (int i = 0; i < size; i++)
+    {
+        for (int j = 0; j < size - 1; j++)
+        {
+            //Sort with first letter of each string in array
+            if(names[j].substr(0, 1) > names[j + 1].substr(0, 1))
+            {
+                swap(names[j], names[j + 1]);
+            }
+        }
+    }
+}
+
+
+int binarySearch (string a[], int capacity, string val)
+{
+    int first = 0, //first element in array
+        last = capacity - 1, //last element in array
+        middle = 0, //middle of search
+        position = -1; //position of string to be found
+        bool found = false; //determines weather string is found
+
+    while (!found && first <= last)
+
+    {
+        //determine midpoint of array
+        middle = (first + last) / 2; 
+        
+        if (a[0] == val)
+        {
+            found = true;
+            position = 0;
+        }
+        //determine if value is found at midpoint of array
+        else if (a[middle] == val) 
+        {
+            found = true;
+            position = middle;
+        }
+        //determine value is in lower half of array
+        else if (a[middle].substr(0, 1) > val.substr(0, 1))
+        {
+            last = middle - 1;
+        }
+        //determine if value is in upper half of array
+        else 
+        {
+            first = middle + 1;
+        }
+    }
+
+    return position;
 }
