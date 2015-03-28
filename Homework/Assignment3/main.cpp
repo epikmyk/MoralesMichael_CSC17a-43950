@@ -22,6 +22,10 @@ int numOfCons(char*);
 int numOfVowels(char*);
 void prob2Menu();
 void problem2();
+bool checkLength(char*, int);
+bool checkUpper(char*);
+bool checkLower(char*);
+bool checkDigit(char*);
 void problem3();
 void problem4();
 void problem5();
@@ -101,6 +105,9 @@ void menu()
     cout << "Enter 5 for problem 10" << endl;
 }
 
+////////////////////////////////////
+//Problem 1////////////////////////
+///////////////////////////////////
 //10.4
 void problem1()
 {
@@ -173,6 +180,9 @@ float avgNumOfLett(char cstring[], int words)
     return avgNumOfLett;
 }
 
+////////////////////////////////////
+//Problem 2////////////////////////
+///////////////////////////////////
 //10.6
 void problem2()
 {
@@ -310,11 +320,134 @@ int numOfVowels(char* cstring)
     return count;
 }
 
+////////////////////////////////////
+//Problem 3////////////////////////
+///////////////////////////////////
+//10.12
 void problem3()
-{
+{   
+    //declare password array
+    char password[30];
+    //declare valid boolean for password
+    bool valid;
+    
+    //set criteria for password
+    cout << "Must contain at least 6 characters " << endl;
+    cout << "Must contain at least one uppercase and lowercase letter " << endl;
+    cout << "Must contain at least one digit " << endl;
+    
+    do
+    {
+        valid = true;
+        
+        //prompt user to enter password
+        cout << "Enter password: " << endl;
+        cin.getline(password, 30);
+        
+        cout << endl;
+        //if password is too short output message
+        if (!checkLength(password, 6))
+        {
+            cout << "Must be at least 6 characters. " << endl;
+            valid = false;
+        }
+    
+        //if password does not contain an uppercase letter output message
+        if (!checkUpper(password))
+        {
+            cout << "Must contain at least one uppercase letter. " << endl;
+            valid = false;
+        }
+    
+        //if password does not contain a lowercase letter output message
+        if (!checkLower(password))
+        {
+            cout << "Must contain at least one lowercase letter. " << endl;
+            valid = false;
+        }
+    
+        //if password does not contain a digit output message
+        if (!checkDigit(password))
+        {
+            cout << "Must contain at least one digit. " << endl;
+            valid = false;
+        }
+        
+        cout << endl;
+        
+    } while (!valid);
     
 }
 
+bool checkLength(char* password, int length)
+{
+    //declare count for number of characters
+    int count = 0;
+    
+    //count number of characters in password
+    for (int i = 0; password[i] != '\0'; i++)
+    {
+            count++;
+    }
+    
+    //if count is less than required length return false
+    if (count < length)
+    {
+        return false;
+    }
+    else
+    {
+        return true;
+    }
+}
+bool checkUpper(char* password)
+{
+    //check for any uppercase letters in password
+    for (int i = 0; password[i] != '\0'; i++)
+    {
+        //if uppercase letter is found return true
+        if (isupper(password[i]))
+        {
+            return true;
+        }
+    }
+    
+    return false;
+}
+bool checkLower(char* password)
+{
+    //check for any lowercase letters in password
+    for (int i = 0; password[i] != '\0'; i++)
+    {
+        //if lowercase letter is found return true
+        if (islower(password[i]))
+        {
+            return true;
+        }
+    }
+    
+    return false;
+}
+
+bool checkDigit(char* password)
+{
+    //check for any digits in password
+    for (int i = 0; password[i] != '\0'; i++)
+    {
+        //if digit is found return true
+        if (isdigit(password[i]))
+        {
+            return true;
+        }
+    }
+    
+    return false;
+}
+
+////////////////////////////////////
+//Problem 4////////////////////////
+///////////////////////////////////
+//11.9
 void problem4()
 {
     
