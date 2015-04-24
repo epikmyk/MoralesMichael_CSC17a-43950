@@ -1,9 +1,16 @@
+/*things to change: 
+-shorten code for saving. too much repeating for resetting values, 
+but didn't have enough time to shorten.
+-should probably put ground into some sort of array
+-*/
+
 #include <SDL.h>
 #include <SDL_image.h>
 #include <SDL_ttf.h>
 #include <SDL_mixer.h>
 #include <iostream>
 #include <string>
+#include <fstream>
 #include "Menu.h"
 #include "Setting.h"
 #include "Shadow.h"
@@ -11,21 +18,20 @@
 
 using namespace std;
 
-const int LEVEL_WIDTH = 2400;
-
-const int SCREEN_WIDTH = 1200;
-const int SCREEN_HEIGHT = 720;
-
 struct SaveInfo
 {
-	string fileName;
 	int savePoint;
+	char playerName[15];
 };
 
-void copyToFile(SaveInfo, SaveInfo);
+void copyToFile(string, SaveInfo);
 
 int main(int argc, char* args[])
 {
+	const int LEVEL_WIDTH = 2400;
+	const int SCREEN_WIDTH = 1200;
+	const int SCREEN_HEIGHT = 720;
+
 	SaveInfo saving;
 
 	//initialize sdl
@@ -68,17 +74,20 @@ int main(int argc, char* args[])
 	}
 
 	bool escapePressed = false; //determine if escape is pressed
-	bool newGameSelected = true; //determine if new game is selected
+	bool downPressed = false; //determine if down is pressed
+	bool upPressed = false; //determine if up is pressed
+	bool enterPressed = false; //determine if entere is pressed
+	bool mainMenuSelected = false; //determine if main meny is selected
+	bool continueSelected = false; //determine if continue is selected for menu
+	bool newGameSelected = false; //determine if new game is selected
+	bool resumeSelected = false; //determine if resume has been selected
 	bool controlsSelected = false; //determine if controls is being selected
 	bool controlScreen = false; //determine if control screen has been started
-	bool upPressed = false; //determine if up is pressed
-	bool downPressed = false; //determine if down is pressed
-	bool enterPressed = false; //determine if entere is pressed
+	bool mainMenuScreen = true; //if main menu screen is up
+	bool newGameStarted; //will determine if new game has been loaded
 	bool gameStart = false; //determine if game has started
 	bool gameRunning = true; //used to determing whether game is running
 	bool pause = false; //determine if game is paused
-	bool resumeSelected = false; //determine if resume has been selected
-	bool mainMenuSelected = false;
 	bool deathTrap1 = false; //will determine if death trap has been activated
 	bool trapDeactivate = false; //if trap is activated
 	bool gameOver = false; //will determine of game is over
@@ -87,14 +96,13 @@ int main(int argc, char* args[])
 	bool bridgeLocksUp = false; //detmine if birdge stays up
 	bool startDog = false; //will determine if dog animation starts
 	bool deadDog = false; //will determine if dog dies
-	bool mainMenuScreen = true; //if main menu screen is up
-	bool newGameStarted; //will determine if new game has been loaded
 	bool pushing = false; //determine if player is pushing object
 	bool bridgeMoving = false; //determine if bridge is moving
 	bool actionPressed = false; //determine if player has pressed action button
 	bool enterName = false; //determine if player has entered name
 	bool rockBridge = false; //determine if rock bridge
-	bool continueSelected = false;
+	bool enterPass = false; //determine if user has been prompted to enter password
+	bool correctPass = true; //if user enteres correctly
 	SDL_Event gameEvent;
 
 	int currentTime = 0;
@@ -102,11 +110,14 @@ int main(int argc, char* args[])
 	float delta = 0.0f;
 	const Uint8* keyState;
 
-	float cameraX = 0;
-	float cameraY = 0;
+	int charPos = 0; //determines character postion
+	//int timer = 0; 
+	int count = 0; //count for when user enters password
+	char doorPass[15]; //password that user enters to get passed door
+	saving.playerName[15]; //player name and also password!
 
-	//array for player name
-	char playerName[15];
+	float cameraX = 0; //camerax position
+	float cameraY = 0; //cameray position
 
 	//background for menu
 	Menu background(gameRenderer, "Images/shadowMenuBackG.png", 0, 0,
@@ -151,6 +162,8 @@ int main(int argc, char* args[])
 	Setting ground2(gameRenderer, "Images/ground.png", 2800, 570, LEVEL_WIDTH - 400,
 		200, &cameraX, &cameraY);
 	Setting ground3(gameRenderer, "Images/ground.png", 5450, 570, LEVEL_WIDTH - 400,
+		200, &cameraX, &cameraY);
+	Setting ground4(gameRenderer, "Images/ground.png", 7450, 570, LEVEL_WIDTH - 400,
 		200, &cameraX, &cameraY);
 	//bridge
 	Setting bridge(gameRenderer, "Images/bridge.png", 2800, 570, 400, 90, &cameraX, &cameraY);
@@ -199,6 +212,8 @@ int main(int argc, char* args[])
 	//spike trap
 	Setting spikeTrap(gameRenderer, "Images/spikeTrap.png", 4800, SCREEN_HEIGHT - 30,
 		690, 40, &cameraX, &cameraY);
+	Setting door(gameRenderer, "Images/door.png", 7000, 0, 345, 720, &cameraX, &cameraY);
+	Setting sign(gameRenderer, "Images/sign.png", 6400, 410, 200, 200, &cameraX, &cameraY);
 
 	//main character named shadow
 	Shadow shadow(gameRenderer, "Images/shadow.png", 300, 500, 9, 2,
@@ -207,8 +222,38 @@ int main(int argc, char* args[])
 	Shadow killerDog(gameRenderer, "Images/killerDog.png", 3950, 520, 5, 2,
 		&cameraX, &cameraY);
 	Text* playerNameInp = NULL;
-	int charPos = 0;
-	int timer = 0;
+	
+	saving.savePoint = 0;
+	string fileName = "gameSave";
+	fstream file;
+
+	//open file for reading
+	file.open(fileName.c_str(), ios::in | ios::binary);
+	if (file.fail())
+	{
+		file.open(fileName.c_str(), ios::out | ios::binary);
+		cout << "creating new file" << endl;
+	}
+	else
+	{
+		//read file
+		file.read(reinterpret_cast<char *>(&saving), sizeof(saving));
+		cout << "file exists" << endl;
+		//close file
+		file.close();
+	}
+	file.close();
+	cout << saving.savePoint;
+
+	//if saving point is at least 1
+	if (saving.savePoint >= 1)
+	{
+		continueSelected = true;
+	}
+	else
+	{
+		newGameSelected = true;
+	}
 
 	//gameloop
 	while (gameRunning)
@@ -231,7 +276,6 @@ int main(int argc, char* args[])
 		//Check to see if player has started game
 		if (gameStart == false)
 		{
-			saving.savePoint = 1;
 			if (mainMenuScreen)
 			{
 				//draw background image
@@ -246,23 +290,47 @@ int main(int argc, char* args[])
 						break;
 					case SDLK_UP:
 						upPressed = false;
+					case SDLK_DOWN:
+						downPressed = false;
 					default:
 						break;
 					}
 				}
 				//if continue is selected
-				if (continueSelected && !enterPressed  &&!newGameSelected)
+				if (continueSelected && !enterPressed &&!newGameSelected)
 				{
 					selectContinueGame.drawMenu(gameRenderer);
 					//draw new game button
 					newGame.drawMenu(gameRenderer);
 					//draw controls button
 					controls.drawMenu(gameRenderer);
+					
 					if (gameEvent.type == SDL_KEYDOWN)
 					{
 						switch (gameEvent.key.keysym.sym)
 						{
 						case SDLK_RETURN:
+							if (saving.savePoint >= 1)
+							{
+								shadow.resetShadow(gameRenderer, 4700, 500);
+								//reset camera
+								cameraX = -shadow.getOriginX() + SCREEN_WIDTH / 2;
+								killerDog.resetShadow(gameRenderer, 3950, 750);
+								killerRock.resetSetting(4800, 600);
+								bridgeLever.resetSetting(2800, 580);
+								for (int i = 0; i < 3; i++)
+								{
+									bridgeOfrocks[i]->resetSetting(4450 + rockPosX, 600);
+									rockPosX += 170;
+								}
+								bridge.resetSetting(2400, 570);
+								bridgeLever.resetSettingY(550);
+								bridgeUp = true;
+								rockBridge = true;
+								deathTrap1 = true;
+								bridgeLocksUp = true;
+								deadDog = true;
+							}
 							gameStart = true;
 							enterPressed = true;
 							mainMenuScreen = false;
@@ -270,7 +338,7 @@ int main(int argc, char* args[])
 						case SDLK_DOWN:
 							newGameSelected = true;
 							continueSelected = false;
-							downPressed = false;
+							downPressed = true;
 							continueSelected = false;
 							break;
 						default:
@@ -280,7 +348,7 @@ int main(int argc, char* args[])
 				}
 				//if new game is selected
 				if (newGameSelected && !enterPressed && !controlsSelected 
-					&& !continueSelected && !enterName && !upPressed)
+					&& !continueSelected)
 				{
 					if (saving.savePoint >= 1)
 					{
@@ -291,64 +359,62 @@ int main(int argc, char* args[])
 					selectNewGame.drawMenu(gameRenderer);
 					//draw controls button
 					controls.drawMenu(gameRenderer);
-					//if s is pressed set controls selected to true
-					if (gameEvent.type == SDL_KEYDOWN)
-					{
-						switch (gameEvent.key.keysym.sym)
-						{
-						case SDLK_RETURN:
-							enterName = true;
-							//gameStart = true;
-							enterPressed = true;
-							mainMenuScreen = false;
-							break;
-						case SDLK_DOWN:
-							if (timer > 2)
-							{
-								controlsSelected = true;
-							}
-							newGameSelected = false;
-							continueSelected = false;
-							downPressed = true;
-							break;
-						default:
-							break;
-						}
-					}
-					if (saving.savePoint >= 1)
+					//make sure down isnt already pressed otherwise keyboard
+					//constantly registers press and it skips from continue
+					//straight to control
+					if (!downPressed)
 					{
 						if (gameEvent.type == SDL_KEYDOWN)
 						{
 							switch (gameEvent.key.keysym.sym)
 							{
-							case SDLK_UP:
-								upPressed = true;
-								continueSelected = true;
+							case SDLK_RETURN:
+								enterName = true;
+								//gameStart = true;
+								saving.savePoint = 0;
+								copyToFile(fileName, saving);
+								enterPressed = true;
+								mainMenuScreen = false;
+								break;
+							case SDLK_DOWN:
+								controlsSelected = true;
 								newGameSelected = false;
+								continueSelected = false;
+								downPressed = true;
+								break;
+							default:
 								break;
 							}
 						}
 					}
-				}
-				if (newGameSelected)
-				{
 					if (saving.savePoint >= 1)
 					{
-						//draw continue game button
-						continueGame.drawMenu(gameRenderer);
+						//make sure up isnt already pressed otherwise keyboard
+						//constantly registers press and it skips from control
+						//straight to continue
+						if (!upPressed)
+						{
+							if (gameEvent.type == SDL_KEYDOWN)
+							{
+								switch (gameEvent.key.keysym.sym)
+								{
+								case SDLK_UP:
+									upPressed = true;
+									newGameSelected = false;
+									continueSelected = true;
+									break;
+								}
+							}
+						}
 					}
-					//draw selected new game button
-					selectNewGame.drawMenu(gameRenderer);
-					//draw controls button
-					controls.drawMenu(gameRenderer);
 				}
+
 				//prompt user to enter name for save file
 				if (enterName)
 				{
 					cout << "Max characters: 15" << endl;
 					cout << "Enter name: ";
-					cin.getline(playerName, 15);
-					saving.fileName = "save" + to_string(charPos) + ".dat";
+					cin.getline(saving.playerName, 15);
 					
 					if (gameEvent.type == SDL_KEYDOWN)
 					{
@@ -422,6 +488,7 @@ int main(int argc, char* args[])
 		//IF GAME HAS STARTED//
 		if (gameStart)
 		{
+
 			if (!mainMenuScreen)
 			{
 				//draw background settings
@@ -441,6 +508,7 @@ int main(int argc, char* args[])
 				ground.drawSetting(gameRenderer, &cameraX);
 				ground2.drawSetting(gameRenderer, &cameraX);
 				ground3.drawSetting(gameRenderer, &cameraX);
+				ground4.drawSetting(gameRenderer, &cameraX);
 				//draw bridge lever past bridge
 				bush1.drawSetting(gameRenderer, &cameraX);
 				//draw dog
@@ -459,6 +527,10 @@ int main(int argc, char* args[])
 				killerRock.drawSetting(gameRenderer, &cameraX);
 				//draw spikes
 				spikeTrap.drawSetting(gameRenderer, &cameraX);
+				//draw door exit to finish game
+				door.drawSetting(gameRenderer, &cameraX);
+				sign.drawSetting(gameRenderer, &cameraX);
+
 			}
 
 			//game is not paused and game is not over and character isnt falling
@@ -615,7 +687,8 @@ int main(int argc, char* args[])
 
 			//if player is not touching ground then fall
 			if (!shadow.collide(ground) && !shadow.collide(ground2) &&
-				!shadow.collide(ground3) && shadow.getOriginY() > 500)
+				!shadow.collide(ground3) && !shadow.collide(ground4) &&
+				shadow.getOriginY() > 500)
 			{
 				if (bridgeUp && shadow.getOriginX() < ground2.getOriginX() - ground2.getRadius()
 					|| (rockBridge && shadow.getOriginX() > killerRock.getOriginX() - killerRock.getRadius()
@@ -641,12 +714,15 @@ int main(int argc, char* args[])
 				rockBridge = false;
 			}
 			//if rock bridge has been activated drop rocks from sky
-			if (rockBridge && killerRock.getOriginY() > 600)
+			if (rockBridge && killerRock.getOriginY() >= 600)
 			{
 				for (int i = 0; i < 3; i++)
 				{
 					bridgeOfrocks[i]->fallFromSky(600, 12);
 				}
+				//first save point write to file
+				saving.savePoint = 1;
+				copyToFile(fileName, saving);
 			}
 			//if rock not touching ground and trap hasn't been deactivated
 			//then rock will fall off ledge
@@ -689,7 +765,52 @@ int main(int argc, char* args[])
 			}
 			//set to true for default
 			resumeSelected = true;
+			
+			//if shadow collides with door and presses action key
+			//prompt to enter password
+			if (shadow.collide(door) && shadow.action(keyState))
+			{
+				enterPass = true;
+			}
+			if (enterPass)
+			{
+				if (count < 1)
+				{
+					cout << "Enter password:";
+					cin.getline(doorPass, 15);
+					
+					//check to see if what the user enters is equal
+					//to password which is the name they entered
+					//when they started the game
+					for (int i = 0; doorPass[i] != '\0'; i++)
+					{
+						if (doorPass[i] != saving.playerName[i])
+						{
+							correctPass = false;
+						}
+					}
 
+					//if they are equal 
+					if (correctPass)
+					{
+						cout << "Correct";
+					}
+					else
+					{
+						cout << "Incorrect";
+					}
+				}
+				count++;
+			}
+			//reset if user enters incorrectly so 
+			//user can try and enter again
+			if (count > 1 && !correctPass)
+			{
+				count = 0;
+				correctPass = true;
+				enterPass = false;
+			}
+			
 			if (pause)
 			{
 				//Check which key is pressed
@@ -799,23 +920,49 @@ int main(int argc, char* args[])
 					{
 					//reset values for game
 					case SDLK_RETURN:
-						cameraX = 0;
-						cameraY = 0;
-						shadow.resetShadow(gameRenderer, 300, 500);
-						killerDog.resetShadow(gameRenderer, 3950, 520);
-						killerRock.resetSetting(950, -100);
-						bridgeLever.resetSetting(2800, 580);
-						rockPosY = 0;
-						for (int i = 0; i < 3; i++)
+						if (saving.savePoint < 1)
 						{
-							bridgeOfrocks[i]->resetSettingY(-120 - rockPosY);
-							rockPosY += 700;
+							cameraX = 0;
+							cameraY = 0;
+							shadow.resetShadow(gameRenderer, 300, 500);
+							killerDog.resetShadow(gameRenderer, 3950, 520);
+							killerRock.resetSetting(950, -100);
+							bridgeLever.resetSetting(2800, 580);
+							rockPosY = 0;
+							for (int i = 0; i < 3; i++)
+							{
+								bridgeOfrocks[i]->resetSettingY(-120 - rockPosY);
+								rockPosY += 700;
+							}
+							enterPressed = true;
+							deathTrap1 = false;
+							gameOver = false;
+							bridgeLocksUp = false;
+							deadDog = false;
 						}
-						enterPressed = true;
-						deathTrap1 = false;
-						gameOver = false;
-						bridgeLocksUp = false;
-						deadDog = false;
+						if (saving.savePoint >= 1)
+						{
+							shadow.resetShadow(gameRenderer, 4700, 500);
+							//reset camera
+							cameraX = -shadow.getOriginX() + SCREEN_WIDTH / 2;
+							killerDog.resetShadow(gameRenderer, 3950, 750);
+							killerRock.resetSetting(4800, 600);
+							bridgeLever.resetSetting(2800, 580);
+							rockPosX = 0;
+							for (int i = 0; i < 3; i++)
+							{
+								bridgeOfrocks[i]->resetSetting(4950 + rockPosX, 600);
+								rockPosX += 170;
+							}
+							bridge.resetSetting(2400, 570);
+							bridgeLever.resetSettingY(550);
+							bridgeUp = true;
+							rockBridge = true;
+							deathTrap1 = true;
+							bridgeLocksUp = true;
+							deadDog = true;
+							gameOver = false;
+						}
 						break;
 					case SDLK_DOWN:
 						mainMenuSelected = true;
@@ -829,7 +976,6 @@ int main(int argc, char* args[])
 			//if controls is selected
 			if (mainMenuSelected)
 			{
-				cout << "selected";
 				//draw selected controls button
 				selectMainMenu.drawMenu(gameRenderer);
 				//draw resume button
@@ -846,19 +992,29 @@ int main(int argc, char* args[])
 						shadow.resetShadow(gameRenderer, 300, 500);
 						killerDog.resetShadow(gameRenderer, 3950, 520);
 						killerRock.resetSetting(950, -100);
+						rockPosY = 0;
+						rockPosY = 0;
 						for (int i = 0; i < 3; i++)
 						{
-							bridgeOfrocks[i]->resetSettingY(-120);
+							bridgeOfrocks[i]->resetSettingY(-120 - rockPosY);
+							rockPosY += 700;
 						}
 						deathTrap1 = false;
 						gameStart = false;
 						mainMenuSelected = false;
-						newGameSelected = true;
 						mainMenuScreen = true;
 						gameOver = false;
 						enterPressed = true;
 						bridgeLocksUp = false;
 						deadDog = false;
+						if (saving.savePoint < 1)
+						{
+							newGameSelected = true;
+						}
+						if (saving.savePoint >= 1)
+						{
+							continueSelected = true;
+						}
 						break;
 					case SDLK_UP:
 						resumeSelected = true;
@@ -900,7 +1056,11 @@ int main(int argc, char* args[])
 	return 0;
 }
 
-void copyToFile(SaveInfo fileName, SaveInfo savePoint)
+//save info to file
+void copyToFile(string fileName, SaveInfo saving)
 {
-
+	fstream file;
+	file.open(fileName.c_str(), ios::out | ios::binary);
+	file.write(reinterpret_cast<char *>(&saving), sizeof(saving));
+	file.close();
 }

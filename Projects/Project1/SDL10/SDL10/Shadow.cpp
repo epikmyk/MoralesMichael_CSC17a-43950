@@ -53,7 +53,7 @@ Shadow::Shadow(SDL_Renderer* gameRenderer, string filePath, int x, int y,
 	cameraRect.w = positionRect.w;
 	cameraRect.h = positionRect.h;
 
-	gameWidth = 11200;
+	gameWidth = 7200;
 }
 
 Shadow::~Shadow()
@@ -150,7 +150,7 @@ void Shadow::update(float delta, const Uint8* keyState, bool fall)
 		}
 		else
 		{
-			if (positionRect.x < gameWidth)
+			if (positionRect.x < gameWidth - 100)
 			{
 				positionRect.x += moveSpeed * delta;
 			}

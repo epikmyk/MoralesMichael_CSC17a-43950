@@ -26,8 +26,6 @@ public:
 	float getOriginY();
 	float getRadius();
 
-	int gameWidth;
-
 private:
 	SDL_Rect cropRect; //cropped image
 	SDL_Texture* shadow; //sprite sheet for shadow image
@@ -44,6 +42,6 @@ private:
 	float* cameraX;
 	float* cameraY;
 	SDL_Rect cameraRect;
-
 	SDL_Rect positionRect;
+	int gameWidth;
 };
