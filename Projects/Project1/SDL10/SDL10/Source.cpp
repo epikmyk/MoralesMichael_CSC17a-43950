@@ -1,7 +1,12 @@
 /*things to change: 
--shorten code for saving. too much repeating for resetting values, 
+-shorten code for saving and in general. too much repeating for resetting values, 
 but didn't have enough time to shorten.
 -should probably put ground into some sort of array
+-try and get user input text in game window instead of console
+-already sort of created a text class but haven't figure out how to
+get it to work with user input. 
+-add sound
+-game itself is not complete. this can be thought of as a demo.
 -*/
 
 #include <SDL.h>
@@ -103,15 +108,16 @@ int main(int argc, char* args[])
 	bool rockBridge = false; //determine if rock bridge
 	bool enterPass = false; //determine if user has been prompted to enter password
 	bool correctPass = true; //if user enteres correctly
+	bool doorUp = false; //will determine if door is up or down
 	SDL_Event gameEvent;
 
 	int currentTime = 0;
 	int prevTime = 0;
-	float delta = 0.0f;
+	float delta = 0.0f; 
 	const Uint8* keyState;
 
-	int charPos = 0; //determines character postion
 	//int timer = 0; 
+	int charPos = 0; //determines character postion
 	int count = 0; //count for when user enters password
 	char doorPass[15]; //password that user enters to get passed door
 	saving.playerName[15]; //player name and also password!
@@ -238,12 +244,13 @@ int main(int argc, char* args[])
 	{
 		//read file
 		file.read(reinterpret_cast<char *>(&saving), sizeof(saving));
-		cout << "file exists" << endl;
+		cout << "game save loaded: " << endl;
+		cout << "save point: " << saving.savePoint << endl;
 		//close file
 		file.close();
 	}
 	file.close();
-	cout << saving.savePoint;
+	
 
 	//if saving point is at least 1
 	if (saving.savePoint >= 1)
@@ -330,6 +337,7 @@ int main(int argc, char* args[])
 								deathTrap1 = true;
 								bridgeLocksUp = true;
 								deadDog = true;
+								doorUp = false;
 							}
 							gameStart = true;
 							enterPressed = true;
@@ -793,14 +801,28 @@ int main(int argc, char* args[])
 					//if they are equal 
 					if (correctPass)
 					{
-						cout << "Correct";
+						cout << "To be continued..." << endl;
 					}
 					else
 					{
-						cout << "Incorrect";
+						cout << "Come back when you have the answer." << endl;
 					}
 				}
 				count++;
+			}
+			//if correct password is entered move door up
+			if (correctPass && enterPass)
+			{
+				door.moveUp(3, -700);
+				doorUp = true;
+			}
+			//for now set to game over
+			if (door.getOriginY() < -300)
+			{
+				gameOver = true;
+				enterPass = false;
+				doorUp = false;
+				count = 0;
 			}
 			//reset if user enters incorrectly so 
 			//user can try and enter again
@@ -810,6 +832,7 @@ int main(int argc, char* args[])
 				correctPass = true;
 				enterPass = false;
 			}
+
 			
 			if (pause)
 			{
@@ -962,6 +985,8 @@ int main(int argc, char* args[])
 							bridgeLocksUp = true;
 							deadDog = true;
 							gameOver = false;
+							doorUp = false;
+							door.resetSettingY(0);
 						}
 						break;
 					case SDLK_DOWN:
@@ -999,6 +1024,7 @@ int main(int argc, char* args[])
 							bridgeOfrocks[i]->resetSettingY(-120 - rockPosY);
 							rockPosY += 700;
 						}
+						door.resetSettingY(0);
 						deathTrap1 = false;
 						gameStart = false;
 						mainMenuSelected = false;
