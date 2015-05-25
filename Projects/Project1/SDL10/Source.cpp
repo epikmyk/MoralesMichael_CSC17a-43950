@@ -16,6 +16,7 @@ get it to work with user input.
 #include <iostream>
 #include <string>
 #include <fstream>
+#include <cstring>
 #include "Menu.h"
 #include "Setting.h"
 #include "Shadow.h"
@@ -29,8 +30,8 @@ struct SaveInfo
 	char playerName[15];
 };
 
-void copyToFile(string, SaveInfo);
-void fileToStruct(string, SaveInfo&);
+void copyToFile(fstream &file, string, SaveInfo);
+void fileToStruct(fstream &file, string, SaveInfo&);
 void hailPattern(int current, int starting, int ending, int pos1, int pos2, int pos3, int &posY, int &countHail);
 
 int main(int argc, char* args[])
@@ -38,8 +39,6 @@ int main(int argc, char* args[])
 	const int LEVEL_WIDTH = 2400;
 	const int SCREEN_WIDTH = 1200;
 	const int SCREEN_HEIGHT = 720;
-
-	SaveInfo saving;
 
 	//initialize sdl
 	if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) < 0)
@@ -80,6 +79,8 @@ int main(int argc, char* args[])
 		cout << "Could not load renderer: " << SDL_GetError();
 	}
 
+	SaveInfo saving;
+
 	bool escapePressed = false; //determine if escape is pressed
 	bool downPressed = false; //determine if down is pressed
 	bool upPressed = false; //determine if up is pressed
@@ -113,12 +114,11 @@ int main(int argc, char* args[])
 	bool doorUp = false; //will determine if door is up or down
 	SDL_Event gameEvent;
 
-	int currentTime = 0;
-	int prevTime = 0;
-	float delta = 0.0f; 
-	const Uint8* keyState;
+	int currentTime = 0; //current time for animation
+	int prevTime = 0; //previous time for animation
+	float delta = 0.0f; //delta time used for animation
+	const Uint8* keyState; //keystate for keypresses
 
-	//int timer = 0; 
 	int charPos = 0; //determines character postion
 	int count = 0; //count for when user enters password
 	char doorPass[15]; //password that user enters to get passed door
@@ -241,30 +241,11 @@ int main(int argc, char* args[])
 	for (int i = 0; i < HAIL_SIZE; i++)
 	{
 		//for the first 6 hail in the array use this
-		if (i < 6)
-		{
-			if (countHail == 1)
-			{
-				hailPosY = -600;
-			}
-			if (countHail == 2)
-			{
-				hailPosY = -300;
-			}
-			if (countHail == 3)
-			{
-				hailPosY = 0;
-			}
-			if (countHail > 2)
-			{
-				countHail = 0;
-			}
-			countHail++;
-		}
+		hailPattern(i, 0, 6, -600, -300, 0, hailPosY, countHail);
 		//for the next 6 
-		hailPattern(i, 6, 12, -700, -350, -80, hailPosY, countHail);
+		hailPattern(i, 6, 12, -350, -700, -80, hailPosY, countHail);
 		//for the next 6 
-		hailPattern(i, 12, 18, -850, -390, -30, hailPosY, countHail);
+		hailPattern(i, 12, 18, -550, -390, -30, hailPosY, countHail);
 		//for next 6 
 		hailPattern(i, 18, 24, -1150, -450, -150, hailPosY, countHail);
 		//for the last 6 
@@ -291,7 +272,7 @@ int main(int argc, char* args[])
 	fstream file;
 
 	//open file for reading to saving info
-	fileToStruct(fileName, saving);
+	fileToStruct(file, fileName, saving);
 	
 	//if saving point is at least 1
 	if (saving.savePoint >= 1)
@@ -358,10 +339,10 @@ int main(int argc, char* args[])
 						switch (gameEvent.key.keysym.sym)
 						{
 						case SDLK_RETURN:
+							//reset values 
 							if (saving.savePoint >= 1)
 							{
 								shadow.resetShadow(gameRenderer, 4700, 500);
-								//reset camera
 								cameraX = -shadow.getOriginX() + SCREEN_WIDTH / 2;
 								killerDog.resetShadow(gameRenderer, 3950, 750);
 								killerRock.resetSetting(4800, 600);
@@ -420,9 +401,8 @@ int main(int argc, char* args[])
 							{
 							case SDLK_RETURN:
 								enterName = true;
-								//gameStart = true;
 								saving.savePoint = 0;
-								copyToFile(fileName, saving);
+								copyToFile(file, fileName, saving);
 								enterPressed = true;
 								mainMenuScreen = false;
 								break;
@@ -644,7 +624,7 @@ int main(int argc, char* args[])
 				killerRock.fallFromSky(530, 18);
 			}
 
-			//if shadow grabs rock get push action
+			//if shadow grabs rock get push action to push rock
 			if (shadow.collide(killerRock) && shadow.action(keyState) &&
 				killerRock.getOriginY() == 530 + 60 && !pause)
 			{
@@ -681,13 +661,11 @@ int main(int argc, char* args[])
 
 			//this will permanently keep the bridge up
 			//the main purpose of this is to bring the rock over the bridge
-			//in a nice easy manner and if the player pushes rock off edge
-			//from the right side of the bridge they will be able to go back
-			//and press the rock switch to get it back since the rock will
-			//be needed one more time
+			//since it will be needed later
 			if (shadow.collide(bridgeLever) && shadow.getOriginX() >= 2400
 				&& !pushing && deadDog)
 			{
+				//if shadow activates lever set bridge locks to true
 				if (shadow.action(keyState))
 				{
 					actionPressed = true;
@@ -786,7 +764,7 @@ int main(int argc, char* args[])
 				}
 				//first save point write to file
 				saving.savePoint = 1;
-				copyToFile(fileName, saving);
+				copyToFile(file, fileName, saving);
 			}
 			//if rock not touching ground and trap hasn't been deactivated
 			//then rock will fall off ledge
@@ -814,7 +792,7 @@ int main(int argc, char* args[])
 				trapDeactivate = false;
 			}
 
-			//check if shadow collides with hail
+			//check if hail hits shadow
 			for (int i = 0; i < HAIL_SIZE; i++)
 			{
 				if (shadow.collide(*hail[i]))
@@ -854,12 +832,17 @@ int main(int argc, char* args[])
 					//check to see if what the user enters is equal
 					//to password which is the name they entered
 					//when they started the game
-					for (int i = 0; doorPass[i] != '\0'; i++)
+					for (int i = 0; i < strlen(doorPass); i++)
 					{
 						if (doorPass[i] != saving.playerName[i])
 						{
 							correctPass = false;
 						}
+					}
+
+					if (strlen(doorPass) != strlen(saving.playerName))
+					{
+						correctPass = false;
 					}
 
 					//if they are equal 
@@ -946,7 +929,7 @@ int main(int argc, char* args[])
 					selectResume.drawMenu(gameRenderer);
 					//draw controls button
 					controls.drawMenu(gameRenderer);
-					//if s is pressed set controls selected to true
+					//if down is pressed set controls selected to true
 					if (downPressed)
 					{
 						controlsSelected = true;
@@ -1023,7 +1006,7 @@ int main(int argc, char* args[])
 				{
 					switch (gameEvent.key.keysym.sym)
 					{
-					//reset values for game
+					//reset values for game depending on save point
 					case SDLK_RETURN:
 						if (saving.savePoint < 1)
 						{
@@ -1048,7 +1031,6 @@ int main(int argc, char* args[])
 						if (saving.savePoint >= 1)
 						{
 							shadow.resetShadow(gameRenderer, 4700, 500);
-							//reset camera
 							cameraX = -shadow.getOriginX() + SCREEN_WIDTH / 2;
 							killerDog.resetShadow(gameRenderer, 3950, 750);
 							killerRock.resetSetting(4800, 600);
@@ -1165,23 +1147,23 @@ int main(int argc, char* args[])
 
 	SDL_Quit();
 	IMG_Quit();
+	TTF_Quit();
+	Mix_Quit();
 
 	return 0;
 }
 
 //save info to file
-void copyToFile(string fileName, SaveInfo saving)
+void copyToFile(fstream &file, string fileName, SaveInfo saving)
 {
-	fstream file;
 	file.open(fileName.c_str(), ios::out | ios::binary);
 	file.write(reinterpret_cast<char *>(&saving), sizeof(saving));
 	file.close();
 }
 
 //save info to file
-void fileToStruct(string fileName, SaveInfo &saving)
+void fileToStruct(fstream &file, string fileName, SaveInfo &saving)
 {
-	fstream file;
 	file.open(fileName.c_str(), ios::in | ios::binary);
 	if (file.fail())
 	{

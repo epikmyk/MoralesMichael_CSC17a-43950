@@ -28,7 +28,7 @@ public:
 
 private:
 	SDL_Rect cropRect; //cropped image
-	SDL_Texture* shadow; //sprite sheet for shadow image
+	SDL_Texture* shadow; //image
 	float moveSpeed; //movement speed
 	float frameCounter; //count frames for animation
 	int frameWidth, frameHeight; //frame width and height for cropped image
@@ -38,10 +38,12 @@ private:
 	bool isActive; //used if animation is occuring
 	SDL_Scancode keys[4]; //keys to be used
 	int airTime; //air time for jump
-	bool jump, right, left;
-	float* cameraX;
-	float* cameraY;
-	SDL_Rect cameraRect;
-	SDL_Rect positionRect;
-	int gameWidth;
+	bool jump; //determine if jumping
+	bool right; //determine if moving in right direction
+	bool left; //determine if moving in left direction
+	float* cameraX; //camera for x position
+	float* cameraY; //camera for y position
+	SDL_Rect cameraRect; //rect for camera
+	SDL_Rect positionRect; //rect for player position
+	int gameWidth; // game width
 };

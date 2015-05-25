@@ -234,6 +234,7 @@ void Shadow::update(float delta, const Uint8* keyState, bool fall)
 	}
 }
 
+//draw shadow to screen with camera
 void Shadow::drawShadow(SDL_Renderer* gameRenderer, float* cameraX)
 {
 	cameraRect.x = positionRect.x + *cameraX;
@@ -242,6 +243,7 @@ void Shadow::drawShadow(SDL_Renderer* gameRenderer, float* cameraX)
 	SDL_RenderCopy(gameRenderer, shadow, &cropRect, &cameraRect);
 }
 
+//reset shadow position
 void Shadow::resetShadow(SDL_Renderer* gameRenderer, int x, int y)
 {
 	cropRect.y = 0;
@@ -250,6 +252,7 @@ void Shadow::resetShadow(SDL_Renderer* gameRenderer, int x, int y)
 	SDL_RenderCopy(gameRenderer, shadow, &cropRect, &cameraRect);
 }
 
+//use to drop shadow
 void Shadow::fall(int speed)
 {
 	if (positionRect.y < 720)
@@ -295,16 +298,19 @@ bool Shadow::collide(Shadow &sObject)
 	}
 }
 
+//get origin x for shadow
 float Shadow::getOriginX()
 {
 	return positionRect.x + originX;
 }
 
+//get origin y for shadow
 float Shadow::getOriginY()
 {
 	return positionRect.y + originY;
 }
 
+//get radius for shadow
 float Shadow::getRadius()
 {
 	return radius;

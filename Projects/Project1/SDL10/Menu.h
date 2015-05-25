@@ -16,6 +16,5 @@ private:
 	SDL_Renderer* gameRenderer;
 	SDL_Texture* menu;
 	SDL_Rect menuRect;
-
 };
 
