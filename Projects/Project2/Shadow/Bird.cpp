@@ -7,7 +7,6 @@ Bird::Bird(SDL_Renderer* gameRenderer, string filePath, int x, int y,
 	int framesX, int framesY, float* passCameraX, float* passCameraY)
 	: Monster(gameRenderer, filePath, x, y, framesX, framesY, passCameraX, passCameraY)
 {
-	birdCount = 0;
 	scaredBirds = false;
 }
 

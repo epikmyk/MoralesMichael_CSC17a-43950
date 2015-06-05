@@ -127,10 +127,10 @@ int main(int argc, char* args[])
 	bool hitTroll = false; //determine if troll is hit with pebble
 	bool deadTroll = false; //determin if troll is dead
 	bool pebbleHit = false; //determine if pebble hits something
-	bool hitBird = false;
-	bool dropRock2 = false;
-	bool sprinklerOn = false;
-	bool scaredBirds = false;
+	bool hitBird = false; //determine if bird is hit
+	bool dropRock2 = false; //determine if rock drops
+	bool sprinklerOn = false; //determine if sprinklers are on
+	bool scaredBirds = false; //determine if birds are scared
 	int pebbleSpeed = 0; //speed for pebble
 	int pickUpTimer = 0; //determine how long ago item was picked up
 	int holdPebbleTimer = 0; //determine how long pebble is in birds mouth
@@ -971,7 +971,7 @@ int main(int argc, char* args[])
 				pickUpTimer++;
 			}
 			//if slingshot is being carried
-			if (carry)
+			if (carry && !pause)
 			{
 				//carry slingshot
 				shadow.carry(slingShot, keyState, moveRight, moveLeft);
@@ -1071,7 +1071,7 @@ int main(int argc, char* args[])
 			}
 
 			//if troll is dead birds will begin to fly
-			if (deadTroll)
+			if (deadTroll && !pause)
 			{
 				for (int i = 0; i < BIRD_SIZE; i++)
 				{
@@ -1099,7 +1099,7 @@ int main(int argc, char* args[])
 			}
 
 			//if bird is hit
-			if (hitBird)
+			if (hitBird && !pause)
 			{
 				pebbleHit = true;
 				//increment hold timer

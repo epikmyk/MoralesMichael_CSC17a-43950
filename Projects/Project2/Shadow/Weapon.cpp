@@ -18,13 +18,14 @@ Weapon::~Weapon()
 {
 }
 
+//this function will be used to determine if player has pressed key to fire weapon
 void Weapon::fire(int &pickUpTimer, bool &justPickedUp, bool &release, const Uint8* keyState)
 {
-
+	//determine if up arrow is being pressed
 	if (keyState[keys[0]] && pickUpTimer > 20)
 	{
-		release = true;
-		justPickedUp = false;
+		release = true; //trigger has been released and weapon will fire
+		justPickedUp = false; //set to false to allow weapon to shoot
 	}
 
 }

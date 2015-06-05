@@ -112,36 +112,43 @@ void Setting::resetSettingY(int y)
 	settingRect.y = y;
 }
 
+//get origin x
 float Setting::getOriginX()
 {
 	return settingRect.x + originX;
 }
 
+//get origin y
 float Setting::getOriginY()
 {
 	return settingRect.y + originY;
 }
 
+//get radius
 float Setting::getRadius()
 {
 	return radius;
 }
 
+//set x position
 void Setting::setX(float x)
 {
 	settingRect.x = x;
 }
 
+//set y position
 void Setting::setY(float y)
 {
 	settingRect.y = y;
 }
 
+//get x postion
 float Setting::getX()
 {
 	return settingRect.x;
 }
 
+//get y position
 float Setting::getY()
 {
 	return settingRect.y;

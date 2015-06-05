@@ -13,10 +13,10 @@ public:
 	void fire(int &pickUpTimer, bool &justPickedUp, bool &release, const Uint8* keyState);
 
 protected:
-	float fireSpeed;
-	bool shootRight;
-	bool shootLeft;
-	bool fireWeapon;
+	float fireSpeed; //determine speed of weapon
+	bool shootRight; //determine if shooting right
+	bool shootLeft; //determine if shooting left
+	bool fireWeapon; //determine if weapon is fired
 
 private:
 	SDL_Scancode keys[1];

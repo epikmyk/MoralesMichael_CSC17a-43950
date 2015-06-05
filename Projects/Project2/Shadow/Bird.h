@@ -15,8 +15,7 @@ public:
 	void scared(bool scaredB);
 
 private:
-	int birdCount;
-	bool scaredBirds;
+	bool scaredBirds; //determine if birds are scared
 
 
 };

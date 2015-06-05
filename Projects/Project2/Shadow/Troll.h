@@ -16,6 +16,6 @@ public:
 	void move(float speed);
 	
 private:
-	bool startTroll;
-	int animateTimer;
+	bool startTroll; // determine if troll animation should start
+	int animateTimer; //determine how long to animate
 };

@@ -32,11 +32,11 @@ protected:
 
 private:
 	SDL_Renderer* gameRenderer;
-	SDL_Texture* setting;
-	int originX, originY;
-	float radius;
-	float* cameraX;
-	float* cameraY;
+	SDL_Texture* setting; 
+	int originX, originY; //origin x and origin y of object
+	float radius; //radius of object
+	float* cameraX; // camera x
+	float* cameraY; //camera Y
 	float distX, distY, combRadius; //distance x and y and combined radius
 	SDL_Rect cameraRect;
 };
