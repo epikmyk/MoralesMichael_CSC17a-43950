@@ -19,7 +19,9 @@ public:
 	void fall(int speed);
 
 	void setX(float x);
+	void setY(float y);
 	float getX();
+	float getY();
 	float getOriginX();
 	float getOriginY();
 	float getRadius();

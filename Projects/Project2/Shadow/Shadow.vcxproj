@@ -70,6 +70,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Bird.cpp" />
     <ClCompile Include="Dog.cpp" />
     <ClCompile Include="Menu.cpp" />
     <ClCompile Include="Monster.cpp" />
@@ -82,6 +83,7 @@
     <ClCompile Include="Weapon.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Bird.h" />
     <ClInclude Include="Dog.h" />
     <ClInclude Include="Menu.h" />
     <ClInclude Include="Monster.h" />

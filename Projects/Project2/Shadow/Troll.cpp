@@ -37,6 +37,8 @@ void Troll::attack(Troll &troll, Protagonist &player, Projectile &pebble,
 	{
 		hitTroll = true;
 	}
+	//this will cause the troll to only animate until the last frame
+	//and not repeat animation
 	if (startTroll)
 	{
 		if (cropRect.x < frameWidth * 7)
@@ -49,5 +51,12 @@ void Troll::attack(Troll &troll, Protagonist &player, Projectile &pebble,
 			startTroll = false;
 		}
 	}
+}
 
+void Troll::move(float speed)
+{
+	if (positionRect.y < 720)
+	{
+		positionRect.y += speed;
+	}
 }

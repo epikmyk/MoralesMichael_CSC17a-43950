@@ -13,8 +13,8 @@ public:
 
 	void attack(Troll &troll, Protagonist &player, Projectile &pebble, 
 		bool &gameOver, bool &hitTroll, bool &trollTrap, float delta);
-
-
+	void move(float speed);
+	
 private:
 	bool startTroll;
 	int animateTimer;

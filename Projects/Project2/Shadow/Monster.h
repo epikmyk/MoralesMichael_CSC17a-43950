@@ -13,7 +13,7 @@ public:
 
 	virtual void attack(Monster &monst, Protagonist &player, bool &gameOver);
 	void animate(float speed, float delta, int frameHeight, bool start);
-	virtual void move(float speed){}
+	virtual void move(float speed) = 0;
 
 private:
 

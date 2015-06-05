@@ -1,8 +1,4 @@
 /*things to change: 
--shorten code for saving and in general. too much repeating for resetting values, 
-but didn't have enough time to shorten.
--should probably put ground into some sort of array
--try and get user input text in game window instead of console
 -already sort of created a text class but haven't figure out how to
 get it to work with user input. 
 -add sound
@@ -26,18 +22,21 @@ get it to work with user input.
 #include "Weapon.h" 
 #include "Projectile.h"
 #include "Troll.h"
+#include "Bird.h"
 
 using namespace std;
 
 struct SaveInfo
 {
 	int savePoint;
-	char playerName[15];
+	char playerName[17];
 };
 
 void copyToFile(string, SaveInfo);
 void fileToStruct(string, SaveInfo&);
-void hailPattern(int current, int starting, int ending, int pos1, int pos2, int pos3, int &posY, int &countHail);
+void hailPattern(int, int, int, int, int, int, int &, int &);
+template <class T>
+void deallocate(T*, int);
 
 int main(int argc, char* args[])
 {
@@ -46,6 +45,7 @@ int main(int argc, char* args[])
 	const int SCREEN_HEIGHT = 720;
 
 	SaveInfo saving;
+	
 
 	//initialize sdl
 	if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) < 0)
@@ -126,9 +126,16 @@ int main(int argc, char* args[])
 	bool branchFall = false; //determine if branch falls
 	bool hitTroll = false; //determine if troll is hit with pebble
 	bool deadTroll = false; //determin if troll is dead
-	bool pebbleHit = false;
-	int pebbleSpeed = 0;
-	int pickUpTimer = 0;
+	bool pebbleHit = false; //determine if pebble hits something
+	bool hitBird = false;
+	bool dropRock2 = false;
+	bool sprinklerOn = false;
+	bool scaredBirds = false;
+	int pebbleSpeed = 0; //speed for pebble
+	int pickUpTimer = 0; //determine how long ago item was picked up
+	int holdPebbleTimer = 0; //determine how long pebble is in birds mouth
+	int birdNum = 0; //determine which bird is holding pebble
+	int birdSpeed = 7;
 
 	SDL_Event gameEvent;
 
@@ -140,8 +147,12 @@ int main(int argc, char* args[])
 	//int timer = 0;
 	int charPos = 0; //determines character postion
 	int count = 0; //count for when user enters password
-	char doorPass[15]; //password that user enters to get passed door
-	//saving.playerName[15]; //player name and also password!
+	char doorPass[16]; //password that user enters to get passed door
+	
+	for (int i = 0; i < 16; i++)
+	{
+		saving.playerName[i] = '\0';
+	}
 
 	float cameraX = 0; //camerax position
 	float cameraY = 0; //cameray position
@@ -199,6 +210,8 @@ int main(int argc, char* args[])
 		200, &cameraX, &cameraY);
 	Setting ground7(gameRenderer, "Images/ground.png", 13450, 570, LEVEL_WIDTH - 400,
 		200, &cameraX, &cameraY);
+	Setting ground8(gameRenderer, "Images/ground.png", 15450, 570, LEVEL_WIDTH - 400,
+		200, &cameraX, &cameraY);
 
 
 	//bridge
@@ -226,13 +239,20 @@ int main(int argc, char* args[])
 	//3rd tree
 	Setting tree3(gameRenderer, "Images/tree.png", 11000, -680, 800, 1300,
 		&cameraX, &cameraY);
+	//troll trap
 	Setting trollTrap(gameRenderer, "Images/trapTrigger.png", 10280, 420, 35, 45,
 		&cameraX, &cameraY);
 	//death trap
 	Setting firstDeathTrap(gameRenderer, "Images/firstDeathTrap.png", 1050, 600,
 		45, 35, &cameraX, &cameraY);
+	//spike trap
+	Setting spikeTrap(gameRenderer, "Images/spikeTrap.png", 4800, SCREEN_HEIGHT - 30,
+		690, 40, &cameraX, &cameraY);
 	//falling rock from death trap
 	Setting killerRock(gameRenderer, "Images/rock.png", 950, -100, 170,
+		120, &cameraX, &cameraY);
+	//rock for keeping sprinklers on
+	Setting killerRock2(gameRenderer, "Images/rock.png", 11450, -100, 170,
 		120, &cameraX, &cameraY);
 	//falling branch for troll death trap
 	Setting killerBranch(gameRenderer, "Images/branch.png", 11050, 100, 350, 200,
@@ -253,18 +273,21 @@ int main(int argc, char* args[])
 	//handle button for dropping rock
 	Setting rockSwitch(gameRenderer, "Images/rockSwitch.png", 1225, 510, 30, 25,
 		&cameraX, &cameraY);
+	//hadle button for dropping second rock for sprinklers
+	Setting rockSwitch2(gameRenderer, "Images/rock2Switch.png", 11405, 125, 25, 45,
+		&cameraX, &cameraY);
+	//switch for sprinklers
+	Setting sprinklerSwitch(gameRenderer, "Images/firstDeathTrap.png", 12350, 600,
+		45, 35, &cameraX, &cameraY);
 	//Bushes that will hid killer dog
 	Setting bush1(gameRenderer, "Images/bush.png", 3700, 350, 400, 304,
 		&cameraX, &cameraY);
 	Setting bush2(gameRenderer, "Images/bush.png", 3900, 350, 400, 304,
 		&cameraX, &cameraY);
-	//spike trap
-	Setting spikeTrap(gameRenderer, "Images/spikeTrap.png", 4800, SCREEN_HEIGHT - 30,
-		690, 40, &cameraX, &cameraY);
 	//door at the end of game
-	Setting door(gameRenderer, "Images/door.png", 12800, 0, 345, 720, &cameraX, &cameraY);
+	Setting door(gameRenderer, "Images/door.png", 14800, 0, 345, 720, &cameraX, &cameraY);
 	//sign for password hint
-	Setting sign(gameRenderer, "Images/sign.png", 12100, 410, 200, 200, &cameraX, &cameraY);
+	Setting sign(gameRenderer, "Images/sign.png", 14100, 410, 200, 200, &cameraX, &cameraY);
 	//sign indicating hail
 	Setting hailSign(gameRenderer, "Images/hailSign.png", 5600, 380, 200, 200, &cameraX, &cameraY);
 	Setting mountains(gameRenderer, "Images/mountains.png", 6100, -30, 3000, 600, &cameraX, &cameraY);
@@ -277,26 +300,7 @@ int main(int argc, char* args[])
 	for (int i = 0; i < HAIL_SIZE; i++)
 	{
 		//for the first 6 hail in the array use this
-		if (i < 6)
-		{
-			if (countHail == 1)
-			{
-				hailPosY = -600;
-			}
-			if (countHail == 2)
-			{
-				hailPosY = -300;
-			}
-			if (countHail == 3)
-			{
-				hailPosY = 0;
-			}
-			if (countHail > 2)
-			{
-				countHail = 0;
-			}
-			countHail++;
-		}
+		hailPattern(i, 0, 6, -600, -300, 0, hailPosY, countHail);
 		//for the next 6
 		hailPattern(i, 6, 12, -700, -350, -80, hailPosY, countHail);
 		//for the next 6
@@ -313,6 +317,7 @@ int main(int argc, char* args[])
 			40, 40, &cameraX, &cameraY);
 		hailPosX += 90;
 	}
+	
 
 	//main character named shadow
 	Protagonist shadow(gameRenderer, "Images/shadow.png", 300, 500, 9, 2,
@@ -321,9 +326,28 @@ int main(int argc, char* args[])
 	Dog killerDog(gameRenderer, "Images/killerDog.png", 3950, 520, 5, 2,
 		&cameraX, &cameraY);
 	Shadow* dog = &killerDog;
-	Troll troll(gameRenderer, "Images/troll.png", 11200, 450, 7, 2,
+	Troll killerTroll (gameRenderer, "Images/troll.png", 11200, 450, 7, 2,
 		&cameraX, &cameraY);
-	Troll* killerTroll = &troll;
+	Shadow* troll = &killerTroll;
+	const int BIRD_SIZE = 20;
+	int birdPosX = 0;
+	int birdPosY = 0;
+	Bird* killerBird[BIRD_SIZE];
+	for (int i = 0; i <BIRD_SIZE; i++)
+	{
+		killerBird[i] = new Bird(gameRenderer, "Images/bird.png", 13000 + birdPosX,
+			200 + birdPosY, 8, 1, &cameraX, &cameraY);
+		birdPosX += 170;
+		//set y position for every other bird
+		if (i % 2 == 0)
+		{
+			birdPosY += 300;
+		}
+		else
+		{
+			birdPosY -= 300;
+		}
+	}
 
 	Weapon slingShot(gameRenderer, "Images/rockSwitch.png", 10800, 600, 20, 20,
 		&cameraX, &cameraY);
@@ -331,7 +355,7 @@ int main(int argc, char* args[])
 	Projectile pebble(gameRenderer, "Images/hail.png", 10800, 600, 10, 10,
 		&cameraX, &cameraY);
 
-
+	saving.playerName[17]; //player name and also password!
 	saving.savePoint = 0;
 	string fileName = "gameSave";
 	fstream file;
@@ -406,10 +430,6 @@ int main(int argc, char* args[])
 						case SDLK_RETURN:
 							if (saving.savePoint >= 1)
 							{
-								//shadow.resetShadow(gameRenderer, 4700, 500);
-								////////////////////////////////////////////
-								///THis is a Test. change back later///////
-								//////////////////////////////////////////////////////////////////////////
 								if (saving.savePoint < 2)
 								{
 									shadow.resetShadow(gameRenderer, 4700, 500);
@@ -530,7 +550,20 @@ int main(int argc, char* args[])
 				{
 					cout << "Max characters: 15" << endl;
 					cout << "Enter name: ";
-					cin.getline(saving.playerName, 15);
+
+					try
+					{
+						cin.getline(saving.playerName, 17);
+						if (strlen(saving.playerName) > 15)
+						{
+							throw 1;
+						}
+					}
+					catch (...)
+					{
+						cout << "You can't enter more than 15 characters!";
+					}
+					
 
 					if (gameEvent.type == SDL_KEYDOWN)
 					{
@@ -601,8 +634,10 @@ int main(int argc, char* args[])
 				}
 			}
 		}
-		///////////////////////
-		//IF GAME HAS STARTED//
+
+		/***********************************************************
+						        Start Game
+		************************************************************/
 		if (gameStart)
 		{
 
@@ -617,7 +652,6 @@ int main(int argc, char* args[])
 				{
 					bridgeOfrocks[i]->drawSetting(gameRenderer, &cameraX);
 				}
-
 				bridge.drawSetting(gameRenderer, &cameraX); //draw bridge
 				bridgeLever.drawSetting(gameRenderer, &cameraX); //draw bridge lever past bridge
 				ground.drawSetting(gameRenderer, &cameraX); //draw ground
@@ -627,19 +661,27 @@ int main(int argc, char* args[])
 				ground5.drawSetting(gameRenderer, &cameraX);
 				ground6.drawSetting(gameRenderer, &cameraX);
 				ground7.drawSetting(gameRenderer, &cameraX);
+				ground8.drawSetting(gameRenderer, &cameraX);
+				for (int i = 0; i < BIRD_SIZE; i++)
+				{
+					killerBird[i]->drawShadow(gameRenderer, &cameraX);
+				}
 				bush1.drawSetting(gameRenderer, &cameraX); //draw bush
 				killerDog.drawShadow(gameRenderer, &cameraX); //draw dog
 				bush2.drawSetting(gameRenderer, &cameraX); //draw bush
 				bridgeSwitch.drawSetting(gameRenderer, &cameraX); //draw bridge switch
 				tree.drawSetting(gameRenderer, &cameraX); //draw tree
 				tree2.drawSetting(gameRenderer, &cameraX); //draw second tree
+				rockSwitch2.drawSetting(gameRenderer, &cameraX); //draw rock switch for sprinklers
 				tree3.drawSetting(gameRenderer, &cameraX); //draw third tree
-				troll.drawShadow(gameRenderer, &cameraX); //draw troll
+				killerTroll.drawShadow(gameRenderer, &cameraX); //draw troll
 				killerBranch.drawSetting(gameRenderer, &cameraX);
 				trollTrap.drawSetting(gameRenderer, &cameraX); //draw troll trap
 				rockSwitch.drawSetting(gameRenderer, &cameraX); //draw switch to drop rock
+				sprinklerSwitch.drawSetting(gameRenderer, &cameraX); //draw sprinkler switch
 				firstDeathTrap.drawSetting(gameRenderer, &cameraX); //draw first death trap
 				killerRock.drawSetting(gameRenderer, &cameraX); //draw rock
+				killerRock2.drawSetting(gameRenderer, &cameraX); //draw second rock
 				spikeTrap.drawSetting(gameRenderer, &cameraX); //draw spikes
 				hailSign.drawSetting(gameRenderer, &cameraX); //draw hail sign
 				mountains.drawSetting(gameRenderer, &cameraX); //draw mountains
@@ -811,7 +853,8 @@ int main(int argc, char* args[])
 			if (!shadow.collide(ground) && !shadow.collide(ground2) &&
 				!shadow.collide(ground3) && !shadow.collide(ground4) &&
 				!shadow.collide(ground5) && !shadow.collide(ground6) &&
-				!shadow.collide(ground7) && shadow.getOriginY() > 500)
+				!shadow.collide(ground7) && !shadow.collide(ground8) &&
+				shadow.getOriginY() > 500)
 			{
 				if ((bridgeUp && shadow.getOriginX() < ground2.getOriginX() - ground2.getRadius())
 					|| (rockBridge && shadow.getOriginX() > killerRock.getOriginX() - killerRock.getRadius()
@@ -845,6 +888,7 @@ int main(int argc, char* args[])
 				//first save point write to file
 				if (saving.savePoint < 1)
 				{
+					cout << "saving..." << endl;
 					saving.savePoint = 1;
 					copyToFile(fileName, saving);
 				}
@@ -875,6 +919,10 @@ int main(int argc, char* args[])
 				trapDeactivate = false;
 			}
 
+			/***************************************************************
+			                        Save Point 1
+			****************************************************************/
+
 			//check if shadow collides with hail
 			for (int i = 0; i < HAIL_SIZE; i++)
 			{
@@ -900,14 +948,20 @@ int main(int argc, char* args[])
 			}
 
 			//get second saving point
-			if (shadow.getX() == 9400)
-			{
+			if (shadow.getX() > 9200 && saving.savePoint < 2)
+			{ 
+				cout << "saving..." << endl;
 				saving.savePoint = 2;
 				copyToFile(fileName, saving);
 			}
+			
+			/**************************************************************
+							        Save Point 2
+			***************************************************************/
 
 			//determine if player picks up weapon
-			if (shadow.collide(slingShot) && shadow.action(keyState) && slingShot.getY() == 600)
+			if (shadow.collide(slingShot) && shadow.action(keyState) && slingShot.getY() == 600
+				&& !shadow.collide(killerRock2))
 			{
 				carry = true;
 				justPickedUp = true;
@@ -927,7 +981,7 @@ int main(int argc, char* args[])
 				slingShot.fire(pickUpTimer, justPickedUp, fireWeapon, keyState);
 				//slingShot.fire(pickUpTimer, fireWeapon, keyState);
 				//if slingshot is fired
-				if (fireWeapon && !trollTrapActivate && !hitTroll)
+				if (fireWeapon && !trollTrapActivate && !hitTroll && !hitBird)
 				{
 					pebble.shoot(pebble, shadow, pebbleHit, moveRight, moveLeft);
 					if (pebble.getOriginX() < shadow.getOriginX() - SCREEN_WIDTH / 2
@@ -938,7 +992,7 @@ int main(int argc, char* args[])
 					//set pebble y position
 					pebble.setY(pebble.getY());
 				}
-				if (!fireWeapon && !trollTrapActivate && !hitTroll)
+				if (!fireWeapon && !trollTrapActivate && !hitTroll && !hitBird)
 				{
 					//set pebble y position
 					pebble.setY(slingShot.getOriginY() - 10);
@@ -951,7 +1005,7 @@ int main(int argc, char* args[])
 				pickUpTimer = 0;
 			}
 			//set killer troll to attack
-			killerTroll->attack(troll, shadow, pebble, gameOver, hitTroll, trollTrapActivate, delta);
+			killerTroll.attack(killerTroll, shadow, pebble, gameOver, hitTroll, trollTrapActivate, delta);
 
 			//if troll is hit with pebble fire it back at shadow
 			if (hitTroll)
@@ -1010,12 +1064,121 @@ int main(int argc, char* args[])
 				branchFall = false;
 			}
 			//if branch hits troll, kill troll
-			if (troll.collide(killerBranch))
+			if (killerTroll.collide(killerBranch))
 			{
-				troll.fall(8);
+				troll->move(8);
 				deadTroll = true;
 			}
 
+			//if troll is dead birds will begin to fly
+			if (deadTroll)
+			{
+				for (int i = 0; i < BIRD_SIZE; i++)
+				{
+					
+					killerBird[i]->scared(scaredBirds);
+					killerBird[i]->move(birdSpeed);
+					
+					killerBird[i]->animate(0.10f, delta, 0, startDog);
+					//if bird goes pasts this point reset bird behind bird furthest to the right
+					if (killerBird[i]->getOriginY() < -50 && !scaredBirds)
+					{
+						killerBird[i]->setX(killerBird[i]->getX() + 3400);
+						//reset y position of every other bird
+						if (i % 2 == 0)
+						{
+							killerBird[i]->setY(200);
+						}
+						else
+						{
+							killerBird[i]->setY(500);
+						}	
+					}
+					killerBird[i]->attack(shadow, pebble, gameOver, hitBird);
+				}
+			}
+
+			//if bird is hit
+			if (hitBird)
+			{
+				pebbleHit = true;
+				//increment hold timer
+				holdPebbleTimer++;
+				if (pebble.getOriginX() > shadow.getOriginX())
+				{
+					pebbleSpeed = 12;
+				}
+				
+				if (holdPebbleTimer > 50)
+				{
+					pebble.moveLeft(pebbleSpeed);
+				}
+
+				//determines how long bird hold pebble in mouth
+				if (holdPebbleTimer < 50)
+				{
+					//if less then 12500(12500 is when birds start to fly up)
+					//move pebble up
+					if (pebble.getX() < 12500)
+					{
+						pebble.setY(pebble.getY() - birdSpeed);
+					}
+					pebble.moveLeft(birdSpeed);
+				}
+				else
+				{
+					pebble.setY(pebble.getY());
+					pebble.setX(pebble.getX());
+				}
+				
+				//if shadow gets hit by pebble game over
+				if (shadow.collide(pebble))
+				{
+					holdPebbleTimer = 0;
+					pebbleHit = true;
+					gameOver = true;
+				}
+				if (pebble.collide(rockSwitch2))
+				{
+					dropRock2 = true;
+				}
+				//if pebble goes off screen reset time and set hitbird to false
+				if (pebble.getOriginX() < shadow.getOriginX() - SCREEN_WIDTH / 2)
+				{
+					holdPebbleTimer = 0;
+					hitBird = false;
+				}
+			}
+			//if drop rock has been activated drop rock
+			if (dropRock2)
+			{
+				killerRock2.fallFromSky(530, 18);
+			}
+
+			//if shadow grabs rock get push action
+			if (shadow.collide(killerRock2) && shadow.action(keyState) &&
+				killerRock.getOriginY() > 530 + 60 && !pause && !carry)
+			{
+				shadow.push(killerRock2, keyState, delta);
+				pushing = true;
+			}
+			else
+			{
+				pushing = false;
+			}
+
+			//if shadow or rock is on sprinkler switch
+			if (shadow.collide(sprinklerSwitch) || killerRock2.collide(sprinklerSwitch))
+			{
+				sprinklerOn = true;
+				scaredBirds = true;
+			}
+			else
+			{
+				scaredBirds = false;
+				sprinklerOn = false;
+			}
+			
 			//if shadow collides with door and presses action key
 			//prompt to enter password
 			if (shadow.collide(door) && shadow.action(keyState))
@@ -1075,7 +1238,10 @@ int main(int argc, char* args[])
 				enterPass = false;
 			}
 
-			//determine if game is paused
+			/************************************************************
+			                      PAUSE SCREEN
+			*************************************************************/
+
 			if (gameEvent.type == SDL_KEYDOWN)
 			{
 				switch (gameEvent.key.keysym.sym)
@@ -1093,7 +1259,6 @@ int main(int argc, char* args[])
 			}
 			//set to true for default
 			resumeSelected = true;
-
 			if (pause)
 			{
 				//Check which key is pressed
@@ -1181,8 +1346,10 @@ int main(int argc, char* args[])
 				}
 			}
 		}
-		////////////////
-		////GAME OVER///
+
+		/*******************************************************
+		                GAME OVER
+		********************************************************/
 		if (gameOver)
 		{
 			startDog = false;
@@ -1225,15 +1392,19 @@ int main(int argc, char* args[])
 						}
 						if (saving.savePoint >= 1)
 						{
-							if (saving.savePoint < 2)
+							if (saving.savePoint == 1)
 							{
 								shadow.resetShadow(gameRenderer, 4700, 500);
 							}
 							if (saving.savePoint == 2)
 							{
 								shadow.resetShadow(gameRenderer, 9600, 500);
+								killerTroll.resetShadow(gameRenderer, 11200, 450);
+								killerBranch.resetSetting(11050, 100);
+								killerRock2.resetSetting(11450, -100);
 								slingShot.resetSetting(10800, 600);
 								pebble.resetSetting(10800, 600);
+								dropRock2 = false;
 								fireWeapon = false;
 								deadTroll = false;
 								hitTroll = false;
@@ -1327,28 +1498,13 @@ int main(int argc, char* args[])
 		}
 		SDL_RenderPresent(gameRenderer);
 	}
-	//deallocate memory
-	for (int i = 0; i < GAME_BACK_SIZE; i++)
-	{
-		delete gameBackground[i];
-	}
-	//deallocate memory
-	for (int i = 0; i < BRIDGE_LOCK_SIZE; i++)
-	{
-		delete bridgeLock[i];
-	}
-	//deallocate memory
-	for (int i = 0; i < ROCK_BRIDGE_SIZE; i++)
-	{
-		delete bridgeOfrocks[i];
-	}
-
 
 	//deallocate memory
-	for (int i = 0; i < HAIL_SIZE; i++)
-	{
-		delete hail[i];
-	}
+	deallocate(gameBackground, GAME_BACK_SIZE);
+	deallocate(bridgeLock, BRIDGE_LOCK_SIZE);
+	deallocate(bridgeOfrocks, ROCK_BRIDGE_SIZE);
+	deallocate(hail, HAIL_SIZE);
+	deallocate(killerBird, BIRD_SIZE);
 
 	SDL_DestroyWindow(gameWindow);
 	gameWindow = NULL;
@@ -1359,6 +1515,16 @@ int main(int argc, char* args[])
 	IMG_Quit();
 
 	return 0;
+}
+
+//delete objects
+template <class T>
+void deallocate(T* obj, int size)
+{
+	for (int i = 0; i < size; i++)
+	{
+		delete obj[i];
+	}
 }
 
 //save info to file

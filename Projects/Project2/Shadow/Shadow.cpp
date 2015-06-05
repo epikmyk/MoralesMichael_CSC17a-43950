@@ -41,7 +41,7 @@ Shadow::Shadow(SDL_Renderer* gameRenderer, string filePath, int x, int y,
 	cameraRect.w = positionRect.w;
 	cameraRect.h = positionRect.h;
 
-	gameWidth = 13000;
+	gameWidth = 15000;
 }
 
 Shadow::~Shadow()
@@ -78,14 +78,24 @@ void Shadow::fall(int speed)
 	}
 }
 
-void Shadow::setX(float x)
+float Shadow::getY()
 {
-	positionRect.x = x;
+	return positionRect.y;
 }
 
 float Shadow::getX()
 {
 	return positionRect.x;
+}
+
+void Shadow::setY(float y)
+{
+	positionRect.y = y;
+}
+
+void Shadow::setX(float x)
+{
+	positionRect.x = x;
 }
 
 //get origin x for shadow
